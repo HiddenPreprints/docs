@@ -37,6 +37,7 @@ GROUP by l.article, l.collection
 ) n
 ;
 ```
+
 ## Explanation
 
 An article visibility index ("shadow index") is needed to sort bioRxiv preprints in order to highlight underrepresented preprints. For the MVP this is based on article views ('abstract' column in the 'articles' table).
