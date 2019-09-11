@@ -2,24 +2,27 @@
 
 ```sql
 SELECT n.article,
-(1 / n.rank_number::decimal) * 100 as shadow_index
+(n.rank_number - 1) / (n.max_collection_rank::decimal - 1) * 100 AS shadow_index
 FROM
 (SELECT m.*,
 RANK () OVER (
   PARTITION BY collection
-  ORDER BY avg_views_rate
-  ) rank_number
+  ORDER BY avg_views_rate DESC
+  ) AS rank_number,
+COUNT (1) OVER (
+    PARTITION BY collection
+    ) AS max_collection_rank
 FROM
 (SELECT l.article, l.collection,
-(SUM(l.abstract::decimal) / MAX(l.day_diff::decimal)) as avg_views_rate
+(SUM(l.abstract::decimal) / MAX(l.day_diff::decimal)) AS avg_views_rate
 FROM
 (SELECT *
 FROM
 (SELECT *,
-j.traffic_date - j.posted as day_diff
+j.traffic_date - j.posted AS day_diff
 FROM
 (SELECT t.article, a.collection,
-(TO_DATE(t.year||'-'||lpad(t.month::text, 2, '0')||'-'||'01', 'YYYY-MM-DD') + ('1 month')::interval)::date as traffic_date,
+(TO_DATE(t.year||'-'||lpad(t.month::text, 2, '0')||'-'||'01', 'YYYY-MM-DD') + ('1 month')::interval)::date AS traffic_date,
 a.posted,
 t.abstract
 FROM prod.article_traffic t
@@ -35,7 +38,7 @@ WHERE k.day_diff <= 100) l
 GROUP by l.article, l.collection
 ) m
 ) n
-;
+ORDER BY 1;
 ```
 
 ## Explanation
@@ -51,5 +54,4 @@ These rates are used to calculate a ranking by article category, and normalised 
 ## Further work
 
 * Incorporate more fields into the index
-* Tidy the index normalisation
 * Is 100 days appropriate?
